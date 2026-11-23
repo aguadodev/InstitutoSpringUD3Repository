@@ -1,0 +1,52 @@
+---
+title: Modelo de entidades JPA - Instituto
+---
+classDiagram
+    direction LR
+
+    class Ciclo {
+        <<Entity>>
+        String codigo PK
+        String siglas
+        String nombre
+        String familia
+        String grado
+        int horas
+    }
+
+    class Curso {
+        <<Entity>>
+        String codigo PK
+        int numero
+    }
+
+    class Modulo {
+        <<Entity>>
+        String codigo PK
+        String nombre
+        int horas
+        int periodosSemanales
+    }
+
+    class Alumno {
+        <<Entity>>
+        Integer id PK autonumérico
+        String nombre
+        String apellidos
+    }
+
+    class Matricula {
+        <<Entity>>
+        Integer id PK autonumérico
+        String cursoAcademico
+        LocalDate fecha
+    }
+
+    %% La flecha indica el sentido de navegación en Java (quién tiene el atributo)
+    Curso "*" --> "1" Ciclo : ciclo · ManyToOne
+    Curso "*" --> "*" Modulo : modulos · ManyToMany · tabla Curso_Modulo
+    Alumno "1" <--> "*" Matricula : matriculas · OneToMany mappedBy, cascade REMOVE / alumno · ManyToOne
+    Matricula "*" --> "1" Curso : curso · ManyToOne
+    Matricula "*" --> "*" Modulo : modulos · ManyToMany · tabla Matricula_Modulo
+
+    note for Matricula "UNIQUE (alumno, cursoAcademico).\nLos módulos pueden ser solo algunos del curso\no incluir pendientes de otro curso del ciclo."

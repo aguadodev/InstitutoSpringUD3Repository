@@ -1,0 +1,65 @@
+@startuml modelo
+' Modelo de entidades JPA del proyecto Instituto (UD3 - Acceso a Datos)
+' Generar imagen:  plantuml -tsvg docs/modelo.puml
+
+' Motor de dibujo interno de PlantUML: no necesita tener Graphviz instalado
+!pragma layout smetana
+
+title Modelo de entidades JPA - Instituto
+
+skinparam classAttributeIconSize 0
+hide circle
+hide methods
+
+class Ciclo <<Entity>> {
+  <u>codigo</u> : String {PK}
+  siglas : String
+  nombre : String
+  familia : String
+  grado : String
+  horas : int
+}
+
+class Curso <<Entity>> {
+  <u>codigo</u> : String {PK}
+  numero : int
+}
+
+class Modulo <<Entity>> {
+  <u>codigo</u> : String {PK}
+  nombre : String
+  horas : int
+  periodosSemanales : int
+}
+
+class Alumno <<Entity>> {
+  <u>id</u> : Integer {PK, autonumérico}
+  nombre : String
+  apellidos : String
+}
+
+class Matricula <<Entity>> {
+  <u>id</u> : Integer {PK, autonumérico}
+  cursoAcademico : String
+  fecha : LocalDate
+  --
+  {unique: alumno + cursoAcademico}
+}
+
+' ---------- Relaciones ----------
+' La flecha indica el sentido de navegación en Java (quién tiene el atributo).
+
+Curso "*" -up-> "1" Ciclo : ciclo\n<<ManyToOne>>
+Curso "*" -right-> "*" Modulo : modulos\n<<ManyToMany>>\n(tabla Curso_Modulo)
+
+Alumno "1" <-right-> "*" Matricula : matriculas / alumno\n<<OneToMany(mappedBy)>> / <<ManyToOne>>\ncascade REMOVE
+Matricula "*" -up-> "1" Curso : curso\n<<ManyToOne>>
+Matricula "*" -right-> "*" Modulo : modulos\n<<ManyToMany>>\n(tabla Matricula_Modulo)
+
+note bottom of Matricula
+  Los módulos pueden ser solo algunos del curso
+  o incluir módulos pendientes de otro curso
+  del mismo ciclo (p. ej. DAM2 + MP0484 de DAM1).
+end note
+
+@enduml

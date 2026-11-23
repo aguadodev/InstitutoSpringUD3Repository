@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modelo JPA Instituto</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface-2: #f0f0ec;
+    --text: #1d1d1b;
+    --muted: #5d5d58;
+    --border: #d6d6cf;
+    --accent: #2f5fb3;
+    --accent-soft: #e3ebf8;
+    --entity-head: #e8eef9;
+    --line: #4a4a46;
+    --pk: #9a3412;
+    --highlight: #f59e0b;
+    --highlight-soft: #fef3c7;
+    --code-bg: #f3f3ef;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615;
+      --surface: #1f1f1d;
+      --surface-2: #282826;
+      --text: #ececE8;
+      --muted: #a3a39c;
+      --border: #3a3a37;
+      --accent: #7ea6ee;
+      --accent-soft: #23314a;
+      --entity-head: #26324a;
+      --line: #b8b8b0;
+      --pk: #fb923c;
+      --highlight: #fbbf24;
+      --highlight-soft: #3d3216;
+      --code-bg: #262624;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161615;
+    --surface: #1f1f1d;
+    --surface-2: #282826;
+    --text: #ececE8;
+    --muted: #a3a39c;
+    --border: #3a3a37;
+    --accent: #7ea6ee;
+    --accent-soft: #23314a;
+    --entity-head: #26324a;
+    --line: #b8b8b0;
+    --pk: #fb923c;
+    --highlight: #fbbf24;
+    --highlight-soft: #3d3216;
+    --code-bg: #262624;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.35rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.05rem; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); font-size: 1.05rem; max-width: 70ch; }
+  code, pre { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.88em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 8px 0 0; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  a { color: var(--accent); }
+
+  /* ---------- Diagrama ---------- */
+  figure { margin: 24px 0 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .scroll { overflow-x: auto; }
+  svg.diagrama { display: block; width: 100%; min-width: 760px; height: auto; }
+  figcaption { color: var(--muted); font-size: 0.9rem; padding: 8px 4px 0; }
+
+  .ent rect.caja { fill: var(--surface); stroke: var(--line); stroke-width: 1.4; }
+  .ent rect.cab { fill: var(--entity-head); stroke: var(--line); stroke-width: 1.4; }
+  .ent text { fill: var(--text); font-size: 13px; font-family: system-ui, sans-serif; }
+  .ent text.nombre { font-weight: 700; font-size: 15px; }
+  .ent text.estereo { fill: var(--muted); font-size: 11px; font-style: italic; }
+  .ent text.pk { fill: var(--pk); text-decoration: underline; font-weight: 600; }
+  .rel path, .rel line { stroke: var(--line); stroke-width: 1.6; fill: none; }
+  .rel text { fill: var(--text); font-size: 12px; font-family: system-ui, sans-serif; }
+  .rel text.card { font-weight: 700; font-size: 14px; }
+  .rel text.tipo { fill: var(--muted); font-size: 11px; }
+  .rel .hit { stroke: transparent; stroke-width: 18; }
+  marker path { fill: var(--line); }
+
+  [data-target] { cursor: pointer; }
+  .ent:hover rect.caja, .ent.activo rect.caja { stroke: var(--highlight); stroke-width: 3; }
+  .ent:hover rect.cab, .ent.activo rect.cab { stroke: var(--highlight); stroke-width: 3; }
+  .rel:hover path:not(.hit), .rel.activo path:not(.hit) { stroke: var(--highlight); stroke-width: 3; }
+  .rel:focus-visible, .ent:focus-visible { outline: none; }
+  .rel:focus-visible path:not(.hit), .ent:focus-visible rect { stroke: var(--highlight); stroke-width: 3; }
+
+  /* ---------- Leyenda ---------- */
+  .leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+  .leyenda div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 0.93rem; }
+  .leyenda strong { display: block; margin-bottom: 2px; }
+  .muestra { display: inline-block; font-family: ui-monospace, monospace; font-weight: 700; color: var(--accent); }
+
+  /* ---------- Tarjetas ---------- */
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .tarjeta {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    transition: border-color .2s, box-shadow .2s, background .2s; scroll-margin-top: 16px;
+  }
+  .tarjeta.activo { border-color: var(--highlight); box-shadow: 0 0 0 3px var(--highlight-soft); }
+  .tarjeta .meta { color: var(--muted); font-size: 0.88rem; margin-bottom: 8px; }
+  .etq { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-right: 4px; vertical-align: 2px; }
+
+  /* ---------- Tablas ---------- */
+  .tabla-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+
+  .pasos { counter-reset: paso; list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .pasos li { counter-increment: paso; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 12px 52px; position: relative; }
+  .pasos li::before { content: counter(paso); position: absolute; left: 14px; top: 12px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--surface); font-weight: 700; display: grid; place-items: center; font-size: 0.85rem; }
+
+  details { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { margin: 8px 0 0; }
+
+  .tema { position: fixed; top: 12px; right: 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.85rem; cursor: pointer; }
+  @media (max-width: 600px) { h1 { font-size: 1.5rem; padding-right: 70px; } }
+</style>
+</head>
+<body>
+<button class="tema" type="button" id="tema" aria-label="Cambiar tema claro/oscuro">◐ Tema</button>
+<main>
+  <h1>Modelo de entidades JPA · Instituto</h1>
+  <p class="lead">Diagrama de clases del proyecto de ejemplo de la UD3 (Acceso a Datos, DAM2):
+    ciclos formativos, cursos, módulos, alumnos y matrículas.
+    <strong>Pulsa sobre una entidad o una relación</strong> del diagrama para ver su explicación.</p>
+
+  <figure>
+    <div class="scroll">
+    <svg class="diagrama" viewBox="0 0 1000 585" role="img" aria-labelledby="diag-titulo">
+      <title id="diag-titulo">Diagrama de clases: Ciclo, Curso, Modulo, Alumno y Matricula con sus relaciones</title>
+      <defs>
+        <marker id="flecha" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z"/>
+        </marker>
+      </defs>
+
+      <!-- ===== Relaciones (debajo de las cajas) ===== -->
+      <!-- Curso -> Ciclo -->
+      <g class="rel" data-target="r-curso-ciclo" tabindex="0">
+        <path class="hit" d="M735,260 L735,197"/>
+        <path d="M735,260 L735,197" marker-end="url(#flecha)"/>
+        <text class="card" x="726" y="256" text-anchor="end">*</text>
+        <text class="card" x="726" y="214" text-anchor="end">1</text>
+        <text x="746" y="226">ciclo</text>
+        <text class="tipo" x="746" y="240">@ManyToOne</text>
+      </g>
+
+      <!-- Curso -> Modulo -->
+      <g class="rel" data-target="r-curso-modulo" tabindex="0">
+        <path class="hit" d="M825,350 L875,438"/>
+        <path d="M825,350 L875,438" marker-end="url(#flecha)"/>
+        <text class="card" x="812" y="368" text-anchor="end">*</text>
+        <text class="card" x="886" y="430">*</text>
+        <text x="862" y="375">modulos</text>
+        <text class="tipo" x="866" y="389">@ManyToMany</text>
+        <text class="tipo" x="870" y="403">tabla Curso_Modulo</text>
+      </g>
+
+      <!-- Matricula -> Curso -->
+      <g class="rel" data-target="r-matricula-curso" tabindex="0">
+        <path class="hit" d="M520,438 L665,350"/>
+        <path d="M520,438 L665,350" marker-end="url(#flecha)"/>
+        <text class="card" x="508" y="430" text-anchor="end">*</text>
+        <text class="card" x="672" y="370">1</text>
+        <text x="572" y="383" text-anchor="end">curso</text>
+        <text class="tipo" x="572" y="397" text-anchor="end">@ManyToOne</text>
+      </g>
+
+      <!-- Alumno <-> Matricula -->
+      <g class="rel" data-target="r-alumno-matricula" tabindex="0">
+        <path class="hit" d="M230,495 L380,495"/>
+        <path d="M230,495 L380,495" marker-start="url(#flecha)" marker-end="url(#flecha)"/>
+        <text class="card" x="240" y="487">1</text>
+        <text class="card" x="364" y="487">*</text>
+        <text x="305" y="515" text-anchor="middle">matriculas / alumno</text>
+        <text class="tipo" x="305" y="529" text-anchor="middle">@OneToMany(mappedBy)</text>
+        <text class="tipo" x="305" y="543" text-anchor="middle">@ManyToOne</text>
+        <text class="tipo" x="305" y="557" text-anchor="middle">cascade REMOVE</text>
+      </g>
+
+      <!-- Matricula -> Modulo -->
+      <g class="rel" data-target="r-matricula-modulo" tabindex="0">
+        <path class="hit" d="M630,495 L780,495"/>
+        <path d="M630,495 L780,495" marker-end="url(#flecha)"/>
+        <text class="card" x="638" y="487">*</text>
+        <text class="card" x="762" y="487">*</text>
+        <text x="705" y="515" text-anchor="middle">modulos</text>
+        <text class="tipo" x="705" y="529" text-anchor="middle">@ManyToMany</text>
+        <text class="tipo" x="705" y="543" text-anchor="middle">tabla Matricula_Modulo</text>
+      </g>
+
+      <!-- ===== Entidades ===== -->
+      <!-- Ciclo -->
+      <g class="ent" data-target="e-ciclo" tabindex="0">
+        <rect class="caja" x="620" y="20" width="230" height="177" rx="6"/>
+        <rect class="cab" x="620" y="20" width="230" height="44" rx="6"/>
+        <text class="estereo" x="735" y="36" text-anchor="middle">«Entity»</text>
+        <text class="nombre" x="735" y="55" text-anchor="middle">Ciclo</text>
+        <text class="pk" x="632" y="84">codigo : String</text>
+        <text x="632" y="104">siglas : String</text>
+        <text x="632" y="124">nombre : String</text>
+        <text x="632" y="144">familia : String</text>
+        <text x="632" y="164">grado : String</text>
+        <text x="632" y="184">horas : int</text>
+      </g>
+
+      <!-- Curso -->
+      <g class="ent" data-target="e-curso" tabindex="0">
+        <rect class="caja" x="620" y="260" width="230" height="90" rx="6"/>
+        <rect class="cab" x="620" y="260" width="230" height="44" rx="6"/>
+        <text class="estereo" x="735" y="276" text-anchor="middle">«Entity»</text>
+        <text class="nombre" x="735" y="295" text-anchor="middle">Curso</text>
+        <text class="pk" x="632" y="324">codigo : String</text>
+        <text x="632" y="343">numero : int</text>
+      </g>
+
+      <!-- Alumno -->
+      <g class="ent" data-target="e-alumno" tabindex="0">
+        <rect class="caja" x="10" y="438" width="220" height="110" rx="6"/>
+        <rect class="cab" x="10" y="438" width="220" height="44" rx="6"/>
+        <text class="estereo" x="120" y="454" text-anchor="middle">«Entity»</text>
+        <text class="nombre" x="120" y="473" text-anchor="middle">Alumno</text>
+        <text class="pk" x="22" y="502">id : Integer (autonumérico)</text>
+        <text x="22" y="522">nombre : String</text>
+        <text x="22" y="541">apellidos : String</text>
+      </g>
+
+      <!-- Matricula -->
+      <g class="ent" data-target="e-matricula" tabindex="0">
+        <rect class="caja" x="380" y="438" width="250" height="130" rx="6"/>
+        <rect class="cab" x="380" y="438" width="250" height="44" rx="6"/>
+        <text class="estereo" x="505" y="454" text-anchor="middle">«Entity»</text>
+        <text class="nombre" x="505" y="473" text-anchor="middle">Matricula</text>
+        <text class="pk" x="392" y="502">id : Integer (autonumérico)</text>
+        <text x="392" y="522">cursoAcademico : String</text>
+        <text x="392" y="541">fecha : LocalDate</text>
+        <line x1="380" y1="549" x2="630" y2="549" stroke="var(--line)" stroke-width="1"/>
+        <text class="estereo" x="392" y="562">UNIQUE (alumno, cursoAcademico)</text>
+      </g>
+
+      <!-- Modulo -->
+      <g class="ent" data-target="e-modulo" tabindex="0">
+        <rect class="caja" x="780" y="438" width="210" height="130" rx="6"/>
+        <rect class="cab" x="780" y="438" width="210" height="44" rx="6"/>
+        <text class="estereo" x="885" y="454" text-anchor="middle">«Entity»</text>
+        <text class="nombre" x="885" y="473" text-anchor="middle">Modulo</text>
+        <text class="pk" x="792" y="502">codigo : String</text>
+        <text x="792" y="522">nombre : String</text>
+        <text x="792" y="542">horas : int</text>
+        <text x="792" y="561">periodosSemanales : int</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Fuentes del diagrama en el proyecto: <code>docs/modelo.puml</code> (PlantUML) y <code>docs/modelo.mmd</code> (Mermaid).</figcaption>
+  </figure>
+
+  <!-- ===================================================== -->
+  <h2>Cómo leer el diagrama</h2>
+  <div class="leyenda">
+    <div><strong>Caja = entidad</strong>Una clase Java con <code>@Entity</code>. Cada objeto se guarda como una fila de una tabla con el mismo nombre.</div>
+    <div><strong><span style="color:var(--pk);text-decoration:underline">Atributo subrayado</span> = clave primaria</strong>Lleva <code>@Id</code>. En <code>Alumno</code> y <code>Matricula</code> la genera la BD (<code>@GeneratedValue</code>); en el resto es un código real (DAM2, MP0486…).</div>
+    <div><strong>Flecha = quién conoce a quién</strong>La flecha sale de la clase que <em>tiene el atributo</em> y apunta a la otra. <code>Curso → Ciclo</code> significa que <code>Curso</code> tiene un atributo <code>ciclo</code>.</div>
+    <div><strong>Doble flecha = bidireccional</strong>Las dos clases se conocen: <code>alumno.getMatriculas()</code> y <code>matricula.getAlumno()</code>.</div>
+    <div><strong>Cardinalidad: <span class="muestra">1</span> y <span class="muestra">*</span></strong>Se lee desde cada extremo: «un curso tiene <b>*</b> (muchos) módulos» y «un módulo está en <b>*</b> cursos».</div>
+    <div><strong>Texto de la relación</strong>Nombre del atributo Java (<code>modulos</code>) y anotación JPA que lo mapea (<code>@ManyToMany</code>).</div>
+  </div>
+
+  <!-- ===================================================== -->
+  <h2>Las entidades</h2>
+  <div class="tarjetas">
+    <article class="tarjeta" id="e-ciclo">
+      <h3>Ciclo</h3>
+      <div class="meta">Tabla <code>Ciclo</code> · PK natural <code>codigo</code></div>
+      <p>Un ciclo formativo completo. Ejemplo: <code>D3IFC000200</code>, DAM, <em>Desenvolvemento de aplicacións multiplataforma</em>, grado superior, 2000 h.</p>
+    </article>
+    <article class="tarjeta" id="e-curso">
+      <h3>Curso</h3>
+      <div class="meta">Tabla <code>Curso</code> · PK natural <code>codigo</code></div>
+      <p>Cada uno de los cursos de un ciclo: <code>DAM1</code>, <code>DAM2</code>, <code>DAW1</code>… Sabe a qué ciclo pertenece y qué módulos tiene.</p>
+    </article>
+    <article class="tarjeta" id="e-modulo">
+      <h3>Modulo</h3>
+      <div class="meta">Tabla <code>Modulo</code> · PK natural <code>codigo</code></div>
+      <p>Un módulo profesional, p. ej. <code>MP0486</code> <em>Acceso a datos</em>, 220 h, 8 sesiones/semana. Se guarda <strong>una sola vez</strong> aunque se imparta en varios cursos.</p>
+    </article>
+    <article class="tarjeta" id="e-alumno">
+      <h3>Alumno</h3>
+      <div class="meta">Tabla <code>Alumno</code> · PK autonumérica <code>id</code></div>
+      <p>Datos personales del alumno. <strong>No tiene curso</strong>: el curso cambia cada año, así que lo indica cada matrícula.</p>
+    </article>
+    <article class="tarjeta" id="e-matricula">
+      <h3>Matricula</h3>
+      <div class="meta">Tabla <code>Matricula</code> · PK autonumérica <code>id</code></div>
+      <p>Une a un alumno con un <strong>curso académico</strong> (<code>2026-2027</code>): el curso en que se matricula y los módulos que cursa, que pueden ser solo algunos o incluir <strong>pendientes</strong> de otro curso del mismo ciclo.</p>
+      <p>Restricción <code>UNIQUE</code>: una sola matrícula por alumno y curso académico.</p>
+    </article>
+  </div>
+
+  <!-- ===================================================== -->
+  <h2>Las relaciones</h2>
+  <div class="tarjetas">
+    <article class="tarjeta" id="r-curso-ciclo">
+      <h3><span class="etq">N:1</span>Curso → Ciclo</h3>
+      <div class="meta">Muchos cursos pertenecen a un ciclo</div>
+<pre><code>// en Curso
+@ManyToOne
+private Ciclo ciclo;</code></pre>
+      <p style="margin-top:10px">En la BD: columna <code>ciclo_codigo</code> en <code>Curso</code> (clave ajena).</p>
+    </article>
+
+    <article class="tarjeta" id="r-curso-modulo">
+      <h3><span class="etq">N:M</span>Curso → Modulo</h3>
+      <div class="meta">Un curso tiene muchos módulos; un módulo puede estar en varios cursos</div>
+<pre><code>// en Curso
+@ManyToMany
+@JoinTable(name = "Curso_Modulo",
+  joinColumns = @JoinColumn(name = "curso_codigo"),
+  inverseJoinColumns = @JoinColumn(name = "modulo_codigo"))
+private List&lt;Modulo&gt; modulos;</code></pre>
+      <p style="margin-top:10px">En la BD: <strong>tabla intermedia</strong> <code>Curso_Modulo</code>. Ejemplo: <em>Linguaxes de marcas</em> está en ASIR1, DAM1 y DAW1.</p>
+    </article>
+
+    <article class="tarjeta" id="r-alumno-matricula">
+      <h3><span class="etq">1:N</span>Alumno ↔ Matricula</h3>
+      <div class="meta">Un alumno tiene muchas matrículas (una por año) · bidireccional</div>
+<pre><code>// en Matricula (lado propietario: tiene la FK)
+@ManyToOne(optional = false)
+private Alumno alumno;
+
+// en Alumno (lado inverso)
+@OneToMany(mappedBy = "alumno",
+           cascade = CascadeType.REMOVE)
+private List&lt;Matricula&gt; matriculas;</code></pre>
+      <p style="margin-top:10px">En la BD: solo la columna <code>alumno_id</code> en <code>Matricula</code>. <code>mappedBy</code> evita una segunda relación; <code>cascade REMOVE</code> borra las matrículas al borrar el alumno.</p>
+    </article>
+
+    <article class="tarjeta" id="r-matricula-curso">
+      <h3><span class="etq">N:1</span>Matricula → Curso</h3>
+      <div class="meta">Cada matrícula es de un curso principal</div>
+<pre><code>// en Matricula
+@ManyToOne(optional = false)
+private Curso curso;</code></pre>
+      <p style="margin-top:10px">En la BD: columna <code>curso_codigo</code> en <code>Matricula</code>. Permite listar los alumnos de DAM2 en 2026-2027.</p>
+    </article>
+
+    <article class="tarjeta" id="r-matricula-modulo">
+      <h3><span class="etq">N:M</span>Matricula → Modulo</h3>
+      <div class="meta">Los módulos concretos que cursa el alumno ese año</div>
+<pre><code>// en Matricula
+@ManyToMany
+@JoinTable(name = "Matricula_Modulo", ...)
+private List&lt;Modulo&gt; modulos;</code></pre>
+      <p style="margin-top:10px">En la BD: tabla intermedia <code>Matricula_Modulo</code>. Pueden ser módulos de otro curso del ciclo (pendientes); <code>MatriculaDao</code> lo valida.</p>
+    </article>
+  </div>
+
+  <!-- ===================================================== -->
+  <h2>Un ejemplo con datos</h2>
+  <p>Uxía está en 2º de DAM en 2026-2027, pero le quedó pendiente <em>Bases de datos</em> de 1º. Así quedan sus datos:</p>
+  <ol class="pasos">
+    <li><strong>Alumno</strong> → una fila: <code>id=5, nombre=Uxía, apellidos=Castro Varela</code>.</li>
+    <li><strong>Matricula</strong> → dos filas, una por curso académico:
+      <code>(1, alumno_id=5, 2025-2026, DAM1)</code> y <code>(2, alumno_id=5, 2026-2027, DAM2)</code>.</li>
+    <li><strong>Matricula_Modulo</strong> → la matrícula 2 tiene los 10 módulos de DAM2
+      <strong>más</strong> <code>MP0484</code> (<em>Bases de datos</em>, de DAM1): 11 filas, 1227 horas.</li>
+    <li>En Java basta con <code>matricula.getModulos().add(basesDeDatos)</code>; al hacer <code>commit</code>, JPA inserta la fila en la tabla intermedia.</li>
+  </ol>
+
+  <!-- ===================================================== -->
+  <h2>Tablas que genera JPA en la base de datos</h2>
+  <p>5 entidades producen 7 tablas: las dos relaciones <code>@ManyToMany</code> necesitan una tabla intermedia cada una.</p>
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr><th>Tabla</th><th>Columnas</th><th>Procede de</th></tr></thead>
+      <tbody>
+        <tr><td><code>Ciclo</code></td><td><u>codigo</u>, siglas, nombre, familia, grado, horas</td><td>Entidad <code>Ciclo</code></td></tr>
+        <tr><td><code>Curso</code></td><td><u>codigo</u>, numero, <em>ciclo_codigo</em> (FK)</td><td>Entidad <code>Curso</code> + <code>@ManyToOne ciclo</code></td></tr>
+        <tr><td><code>Modulo</code></td><td><u>codigo</u>, nombre, horas, periodosSemanales</td><td>Entidad <code>Modulo</code></td></tr>
+        <tr><td><code>Curso_Modulo</code></td><td><em>curso_codigo</em> (FK), <em>modulo_codigo</em> (FK)</td><td><code>@ManyToMany Curso.modulos</code></td></tr>
+        <tr><td><code>Alumno</code></td><td><u>id</u>, nombre, apellidos</td><td>Entidad <code>Alumno</code></td></tr>
+        <tr><td><code>Matricula</code></td><td><u>id</u>, cursoAcademico, fecha, <em>alumno_id</em> (FK), <em>curso_codigo</em> (FK) · UNIQUE (alumno_id, cursoAcademico)</td><td>Entidad <code>Matricula</code> + dos <code>@ManyToOne</code></td></tr>
+        <tr><td><code>Matricula_Modulo</code></td><td><em>matricula_id</em> (FK), <em>modulo_codigo</em> (FK)</td><td><code>@ManyToMany Matricula.modulos</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;color:var(--muted);font-size:.92rem">La lista <code>Alumno.matriculas</code> <strong>no</strong> crea ninguna columna: gracias a <code>mappedBy</code> reutiliza <code>Matricula.alumno_id</code>.</p>
+
+  <!-- ===================================================== -->
+  <h2>Comprueba que lo has entendido</h2>
+  <details>
+    <summary>¿Por qué <code>Alumno</code> no tiene un atributo <code>curso</code>?</summary>
+    <p>Porque un alumno cambia de curso cada año y puede tener módulos de dos cursos a la vez. El curso es un dato de cada <code>Matricula</code>, no del alumno.</p>
+  </details>
+  <details>
+    <summary>¿Qué tabla hay que consultar para saber en qué cursos se imparte <code>MP0373</code>?</summary>
+    <p><code>Curso_Modulo</code>. En JPQL no se nombra la tabla: <code>SELECT c FROM Curso c JOIN c.modulos m WHERE m.codigo = 'MP0373'</code>.</p>
+  </details>
+  <details>
+    <summary>¿Qué ocurre al borrar un alumno con dos matrículas?</summary>
+    <p>Por <code>cascade = REMOVE</code>, JPA borra primero sus filas de <code>Matricula_Modulo</code> y sus 2 matrículas, y después el alumno. Sin la cascada, la clave ajena <code>alumno_id</code> impediría el borrado.</p>
+  </details>
+  <details>
+    <summary>Si quisiéramos guardar la nota de cada módulo matriculado, ¿dónde iría?</summary>
+    <p>No cabe en <code>@ManyToMany</code>, porque la tabla intermedia no puede tener columnas propias. Habría que crear una entidad <code>MatriculaModulo</code> (matricula, modulo, nota) con dos relaciones <code>@ManyToOne</code>.</p>
+  </details>
+  <details>
+    <summary>¿Por qué <code>Matricula.modulos</code> es LAZY y qué problema puede dar?</summary>
+    <p>Las colecciones (<code>@OneToMany</code>, <code>@ManyToMany</code>) se cargan por defecto solo cuando se recorren. Si se recorren con el <code>EntityManager</code> ya cerrado, salta <code>LazyInitializationException</code>; por eso <code>MatriculaDao</code> usa <code>JOIN FETCH</code>.</p>
+  </details>
+</main>
+
+<script>
+  // Al pulsar una entidad o relación del diagrama, resalta y muestra su tarjeta;
+  // al pasar sobre una tarjeta, resalta su elemento en el diagrama.
+  (function () {
+    const elementos = document.querySelectorAll('svg [data-target]');
+    function limpiar() {
+      document.querySelectorAll('.activo').forEach(e => e.classList.remove('activo'));
+    }
+    function activar(id, desplazar) {
+      limpiar();
+      const tarjeta = document.getElementById(id);
+      document.querySelectorAll('[data-target="' + id + '"]').forEach(e => e.classList.add('activo'));
+      if (tarjeta) {
+        tarjeta.classList.add('activo');
+        if (desplazar) tarjeta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+    elementos.forEach(el => {
+      el.addEventListener('click', () => activar(el.dataset.target, true));
+      el.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); activar(el.dataset.target, true); }
+      });
+    });
+    document.querySelectorAll('.tarjeta').forEach(t => {
+      t.addEventListener('mouseenter', () => activar(t.id, false));
+      t.addEventListener('mouseleave', limpiar);
+    });
+
+    // Botón de tema claro/oscuro (se recuerda si el navegador lo permite)
+    const raiz = document.documentElement;
+    try {
+      const guardado = localStorage.getItem('tema');
+      if (guardado) raiz.dataset.theme = guardado;
+    } catch (e) {}
+    document.getElementById('tema').addEventListener('click', () => {
+      const oscuroActual = raiz.dataset.theme
+        ? raiz.dataset.theme === 'dark'
+        : matchMedia('(prefers-color-scheme: dark)').matches;
+      raiz.dataset.theme = oscuroActual ? 'light' : 'dark';
+      try { localStorage.setItem('tema', raiz.dataset.theme); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
